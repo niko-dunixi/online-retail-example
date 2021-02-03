@@ -16,9 +16,12 @@ validate_vars:
 .terraform: validate_vars
 	[ -d .terraform ] || $(TF) init
 
-deploy: validate_vars .terraform
+terraform_$(TERRAFORM_VERSION)_linux_amd64.zip:
+	curl -JLO https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
+
+deploy: validate_vars .terraform terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
 	./sync-bootstrap-state.sh --direction=down
-	$(TF) apply -auto-approve
+	$(TF) apply -auto-approve || (./sync-bootstrap-state.sh --direction=up && false)
 	./sync-bootstrap-state.sh --direction=up
 
 fmt: validate_vars

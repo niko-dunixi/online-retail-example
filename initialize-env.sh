@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 env_file=".env"
+echo '' > "${env_file}"
 # These will be different for everyone
 if [ -z "${AWS_PROFILE}" ]; then
 	read -rp "Enter AWS_PROFILE: " AWS_PROFILE

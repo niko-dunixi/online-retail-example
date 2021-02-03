@@ -25,10 +25,12 @@ validate_vars:
 		-backend-config "key=tfstate/managed/pipeline.tf"
 
 deploy: validate_vars .terraform
-	$(TF) apply -var-file=$(TF_VARFILE) -auto-approve
+	$(TF) apply \
+		-var bootstrap_bucket_name="$(shell ./get-bootstrap-resource.sh --resource=s3)" \
+		-var-file=$(TF_VARFILE) \
+		-auto-approve
 
 destroy: validate_vars .terraform
-	#$(TF) apply -var-file=$(TF_VARFILE) -auto-approve
 	$(TF) destroy -var-file=$(TF_VARFILE)
 
 trigger: validate_vars .terraform

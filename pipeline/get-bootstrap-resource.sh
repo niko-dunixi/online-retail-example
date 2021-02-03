@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -e
-source ../.env
-# shellcheck disable=SC2046
-export $(cut -d= -f1 ../.env)
+if [ -f ../.env ]; then
+  source ../.env
+  # shellcheck disable=SC2046
+  export $(cut -d= -f1 ../.env)
+fi
 
 while [ $# -gt 0 ]; do
   case "${1}" in
@@ -19,7 +21,7 @@ done
 
 resource_arn=$(aws resourcegroupstaggingapi get-resources \
   --tag-filters Key=meta_tier,Values=bootstrap \
-  --resource-type-filters "${resource}" --query 'ResourceTagMappingList[0].ResourceARN' | jq -r)
+  --resource-type-filters "${resource}" --query 'ResourceTagMappingList[0].ResourceARN' | jq -r '.')
 
 if [ "${resource}" == "s3" ]; then
   resource_name="${resource_arn#*:::}"

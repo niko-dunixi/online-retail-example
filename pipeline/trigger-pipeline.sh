@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -e
-source ../.env
-# shellcheck disable=SC2046
-export $(cut -d= -f1 ../.env)
+if [ -f ../.env ]; then
+  source ../.env
+  # shellcheck disable=SC2046
+  export $(cut -d= -f1 ../.env)
+fi
 
 while [ $# -gt 0 ]; do
   case "${1}" in
