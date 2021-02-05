@@ -27,21 +27,20 @@ func Create(ctx context.Context, createProductRequest lib.Product) (lib.Product,
 	}
 
 	_, err = dynamoDB.PutItemWithContext(ctx, &dynamodb.PutItemInput{
-		ConditionExpression: aws.String("attribute_not_exists(#item)"),
-		ExpressionAttributeNames: map[string]*string{
-			"#uuid": aws.String("uuid"),
-			"#item": aws.String("item"),
+		//ConditionExpression: aws.String("attribute_not_exists(#u) and attribute_not_exists(#i)"),
+		//ExpressionAttributeNames: map[string]*string{
+		//	"#u": aws.String("uuid"),
+		//	"#i": aws.String("item"),
+		//},
+		ConditionExpression: aws.String("#i != :i"),
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":i": {S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name)},
 		},
 		Item: map[string]*dynamodb.AttributeValue{
-			"#uuid": {
-				S: aws.String(itemUUID.String()),
-			},
-			"#item": {
-				S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name),
-			},
-			"description": {
-				S: aws.String(createProductRequest.Description),
-			},
+			"uuid":        {S: aws.String(itemUUID.String())},
+			//"item":        {S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name)},
+			"item":        {S: aws.String(":i")},
+			"description": {S: aws.String(createProductRequest.Description)},
 		},
 		TableName: aws.String(tableName),
 	})

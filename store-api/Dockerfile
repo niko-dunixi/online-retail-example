@@ -8,6 +8,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     go mod download
 ADD . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
+    go test ./...
+RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -o /create ./cmd/create
 
 #FROM FROM public.ecr.myAWS/lambda/go:1.x

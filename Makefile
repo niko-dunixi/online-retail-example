@@ -5,7 +5,7 @@ AWS_REGION ?= ${AWS_REGION}
 TERRAFORM_VERSION = 0.14.5
 
 TF = docker run --rm -it \
-	--env-file=../.env \
+	--env-file=.env \
 	--workdir=/main \
 	--volume $(shell pwd):/main \
 	--volume "$(HOME)/.aws:/root/.aws" \
@@ -17,6 +17,8 @@ TF = docker run --rm -it \
 fmt: .env
 	$(MAKE) -C bootstrap fmt TERRAFORM_VERSION=$(TERRAFORM_VERSION)
 	$(MAKE) -C pipeline fmt TERRAFORM_VERSION=$(TERRAFORM_VERSION)
+	$(MAKE) -C store-api fmt
+	$(TF) fmt
 
 bootstrap: .env
 	$(MAKE) -C bootstrap deploy TERRAFORM_VERSION=$(TERRAFORM_VERSION)
@@ -30,8 +32,10 @@ destroy-pipeline: .env
 trigger-pipeline: .env
 	$(MAKE) -C pipeline trigger TERRAFORM_VERSION=$(TERRAFORM_VERSION)
 
-deploy-application:
+build-functions:
 	$(MAKE) -C store-api
+
+deploy-application:
 	[ -d .terraform ] || $(TF) init \
 		-backend-config "bucket=$(shell ./pipeline/get-bootstrap-resource.sh --resource=s3)" \
 		-backend-config "dynamodb_table=$(shell ./pipeline/get-bootstrap-resource.sh --resource=dynamodb)" \
