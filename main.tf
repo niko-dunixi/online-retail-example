@@ -18,14 +18,19 @@ resource "random_uuid" "store_table" {
 
 resource "aws_dynamodb_table" "store_table" {
   name      = random_uuid.store_table.result
-  hash_key  = "uuid"
-  range_key = "item"
+//  hash_key  = "uuid"
+//  range_key = "item"
+//  attribute {
+//    name = "uuid"
+//    type = "S"
+//  }
+//  attribute {
+//    name = "item"
+//    type = "S"
+//  }
+  hash_key = "key"
   attribute {
-    name = "uuid"
-    type = "S"
-  }
-  attribute {
-    name = "item"
+    name = "key"
     type = "S"
   }
 
