@@ -23,4 +23,4 @@ phases:
   build:
     commands:
       - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "$(./get-account-id.sh).dkr.ecr.${AWS_REGION}.amazonaws.com"
-      - make build-functions deploy-application TF=terraform
+      - make build-functions deploy-application

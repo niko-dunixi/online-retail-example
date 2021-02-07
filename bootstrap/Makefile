@@ -3,11 +3,12 @@
 TERRAFORM_VERSION =
 
 TF = docker run --rm -it \
-	--env-file=../.env \
+	--env-file=.env \
 	--workdir=/main \
+	--volume /var/run/docker.sock:/var/run/docker.sock \
 	--volume $(shell pwd):/main \
 	--volume "$(HOME)/.aws:/root/.aws" \
-	hashicorp/terraform:$(TERRAFORM_VERSION)
+	build-env:latest
 
 validate_vars:
 	@[ -f ../.env ] || (echo "You must initialize the .env file in the project directory" && false)
