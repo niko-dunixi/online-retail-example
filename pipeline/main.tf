@@ -145,6 +145,8 @@ data "aws_iam_policy_document" "pipeline_role_permissions" {
       "iam:DeleteRole",
       "iam:GetRolePolicy",
       "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:PassRole",
     ]
     resources = [
       "*"
