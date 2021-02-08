@@ -42,7 +42,7 @@ func Create(ctx context.Context, createProductRequest lib.Product) (lib.Product,
 		Item: map[string]*dynamodb.AttributeValue{
 			//"uuid":        {S: aws.String(itemUUID.String())},
 			//"item":        {S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name)},
-			"key":        {S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name)},
+			"key":         {S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name)},
 			"description": {S: aws.String(createProductRequest.Description)},
 		},
 		TableName: aws.String(tableName),

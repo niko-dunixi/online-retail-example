@@ -1,18 +1,19 @@
 .PHONY: validate_vars deploy fmt
 
 TERRAFORM_VERSION =
+#
+#TF = docker run --rm -it \
+#	--env-file=.env \
+#	--workdir=/main \
+#	--volume /var/run/docker.sock:/var/run/docker.sock \
+#	--volume $(shell pwd):/main \
+#	--volume "$(HOME)/.aws:/root/.aws" \
+#	build-env:latest
 
-TF = docker run --rm -it \
-	--env-file=.env \
-	--workdir=/main \
-	--volume /var/run/docker.sock:/var/run/docker.sock \
-	--volume $(shell pwd):/main \
-	--volume "$(HOME)/.aws:/root/.aws" \
-	build-env:latest
+TF := terraform
 
 validate_vars:
 	@[ -f ../.env ] || (echo "You must initialize the .env file in the project directory" && false)
-	@[ -n "$(TERRAFORM_VERSION)" ] || (echo "You must set TERRAFORM_VERSION" && false)
 
 .terraform: validate_vars
 	[ -d .terraform ] || $(TF) init
