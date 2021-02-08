@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"log"
 	"store-api/lib"
 	"store-api/lib/env"
 	_ "store-api/lib/log"
 	"store-api/lib/myAWS"
+	"strings"
 )
 
 func main() {
@@ -17,39 +20,40 @@ func main() {
 }
 
 func Create(ctx context.Context, createProductRequest lib.Product) (lib.Product, error) {
+	log.Printf("invocation request: %+v", createProductRequest)
 	dynamoDB := myAWS.DynamoDB()
 
 	tableName := env.MustEnvString("TABLE_NAME")
-	//itemUUID, err := uuid.NewRandom()
-	//if err != nil {
-	//	return lib.Product{}, fmt.Errorf("could not create uuid: %v", err)
-	//}
-
-	_, err := dynamoDB.PutItemWithContext(ctx, &dynamodb.PutItemInput{
-		ConditionExpression: aws.String("attribute_not_exists(#k)"),
+	log.Printf("dynamodb table: %s", tableName)
+	productKey := "product#" + createProductRequest.Vendor + "#" + createProductRequest.Name
+	item := map[string]*dynamodb.AttributeValue{
+		"key_hash":  {S: aws.String(productKey)},
+		"key_range": {S: aws.String(productKey)},
+	}
+	if description := strings.TrimSpace(createProductRequest.Description); len(description) > 0 {
+		item["description"] = &dynamodb.AttributeValue{S: aws.String(description)}
+	}
+	log.Printf("dynamodb put: %+v", item)
+	response, err := dynamoDB.PutItemWithContext(ctx, &dynamodb.PutItemInput{
+		ConditionExpression: aws.String("attribute_not_exists(#key_hash)"),
 		ExpressionAttributeNames: map[string]*string{
-			"#k": aws.String("key"),
+			"#key_hash": aws.String("key_hash"),
 		},
-		//ConditionExpression: aws.String("attribute_not_exists(#u) and attribute_not_exists(#i)"),
-		//ExpressionAttributeNames: map[string]*string{
-		//	"#u": aws.String("uuid"),
-		//	"#i": aws.String("item"),
-		//},
-		//ConditionExpression: aws.String("#i != :i"),
-		//ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-		//	":i": {S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name)},
-		//},
-		Item: map[string]*dynamodb.AttributeValue{
-			//"uuid":        {S: aws.String(itemUUID.String())},
-			//"item":        {S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name)},
-			"key":         {S: aws.String("product#" + createProductRequest.Vendor + "#" + createProductRequest.Name)},
-			"description": {S: aws.String(createProductRequest.Description)},
-		},
+		Item:      item,
 		TableName: aws.String(tableName),
 	})
 	if err != nil {
-		return lib.Product{}, fmt.Errorf("could not create product: %+v", err)
+		if awsErr, ok := err.(awserr.Error); ok {
+			switch awsErr.Code() {
+			case dynamodb.ErrCodeConditionalCheckFailedException:
+				err = fmt.Errorf(`vendor product already exists: %s %s`,
+					createProductRequest.Vendor, createProductRequest.Name)
+			}
+		}
+		log.Printf("dynamodb error: %+v", err)
+		return lib.Product{}, err
 	}
-
+	log.Printf("dynamodb response: %+v", response)
+	log.Printf("invocation response: %+v", createProductRequest)
 	return createProductRequest, nil
 }

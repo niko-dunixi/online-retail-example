@@ -1,0 +1,14 @@
+## Pass back the result from DynamoDB. **
+#set ($response = [])
+#foreach($item in $context.result)
+    #set ($inner = {})
+    #set ($productArr = $item.key_hash.split("#"))
+    $util.quiet($inner.put("vendor", $productArr[1]))
+    $util.quiet($inner.put("name", $productArr[2]))
+    #if ($context.result.containsKey("description"))
+        $util.quiet($inner.put("description", $inner.get("description")))
+    #else
+        $util.quiet($inner.put("description", null))
+    #end
+#end
+$util.toJson($response)

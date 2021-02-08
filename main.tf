@@ -18,11 +18,16 @@ resource "random_uuid" "store_table" {
 
 resource "aws_dynamodb_table" "store_table" {
   name     = random_uuid.store_table.result
-  hash_key = "key"
+  hash_key = "key_hash"
   attribute {
-    name = "key"
+    name = "key_hash"
     type = "S"
   }
+//  range_key = "key_range"
+//  attribute {
+//    name = "key_range"
+//    type = "S"
+//  }
 
   billing_mode = "PAY_PER_REQUEST"
   tags = merge(local.common_tags, {
@@ -73,25 +78,41 @@ resource "aws_appsync_datasource" "creation_function" {
   }
 }
 
-resource "aws_appsync_resolver" "creation_function" {
-  api_id      = aws_appsync_graphql_api.main_api.id
-  type        = "Mutation"
-  field       = "create"
-  data_source = aws_appsync_datasource.creation_function.name
-  request_template = templatefile("appsync_create_function_request.json.tpl", {
-  })
-  response_template = templatefile("appsync_create_function_response.json.tpl", {
-  })
+resource "aws_appsync_datasource" "dynamodb_lookup" {
+  api_id           = aws_appsync_graphql_api.main_api.id
+  name             = "dynamo_query"
+  type             = "AMAZON_DYNAMODB"
+  service_role_arn = aws_iam_role.appsync.arn
+  dynamodb_config {
+    table_name = aws_dynamodb_table.store_table.name
+  }
 }
 
-//resource "aws_appsync_function" "creation_function" {
-//  name        = "creation_function"
-//  api_id      = aws_appsync_graphql_api.main_api.id
-//  data_source = aws_appsync_datasource.creation_function.name
-//  request_mapping_template = templatefile("appsync_create_function_request.json.tpl", {
-//  })
-//  response_mapping_template = templatefile("appsync_create_function_response.json.tpl", {
-//  })
+resource "aws_appsync_resolver" "creation_function" {
+  api_id            = aws_appsync_graphql_api.main_api.id
+  type              = "Mutation"
+  field             = "create"
+  data_source       = aws_appsync_datasource.creation_function.name
+  request_template  = file("appsync_create_function_request.vtl")
+  response_template = file("appsync_create_function_response.vtl")
+}
+
+resource "aws_appsync_resolver" "get_one" {
+  api_id            = aws_appsync_graphql_api.main_api.id
+  type              = "Query"
+  field             = "get"
+  data_source       = aws_appsync_datasource.dynamodb_lookup.name
+  request_template  = file("appsync_dyndb_get_one_request.vtl")
+  response_template = file("appsync_dyndb_get_one_response.vtl")
+}
+
+//resource "aws_appsync_resolver" "list_many" {
+//  api_id            = aws_appsync_graphql_api.main_api.id
+//  type              = "Query"
+//  field             = "list"
+//  data_source       = aws_appsync_datasource.dynamodb_lookup.name
+//  request_template  = file("appsync_dyndb_list_many_request.vtl")
+//  response_template = file("appsync_dyndb_list_many_response.vtl")
 //}
 
 resource "random_uuid" "appsync_role" {
@@ -144,6 +165,16 @@ data "aws_iam_policy_document" "appsync_permissions" {
     ]
     resources = [
       module.create_store_function.lambda_arn,
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+    ]
+    resources = [
+      aws_dynamodb_table.store_table.arn,
     ]
   }
 }

@@ -5,8 +5,8 @@ type Product {
 }
 
 type Query {
-    get(vendor: String!, name: String!): Product
-    list(vendor: String): [Product]!
+    get(vendor: String!, name: String!): Product!
+#    list(vendor: String): [Product!]!
 }
 
 type Mutation {
